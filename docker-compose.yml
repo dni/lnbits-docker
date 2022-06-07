@@ -1,0 +1,84 @@
+version: "3.7"
+services:
+  bitcoind:
+    hostname: bitcoind
+    image: boltz/bitcoin-core:22.0
+    command: "-regtest -zmqpubrawtx=tcp://0.0.0.0:29000 -zmqpubrawblock=tcp://0.0.0.0:29001 -txindex -rpcallowip=0.0.0.0/0 -rpcbind=0.0.0.0 -rpcuser=lnbits -rpcpassword=lnbits"
+    expose:
+      - 29000:29000
+      - 29001:29001
+      - 18443:18443
+      - 18444:18444
+  clightning:
+    hostname: clightning
+    image: michael1011/cln:latest
+    entrypoint: "sh -c 'sleep 15 && lightningd --network regtest --bind-addr=0.0.0.0:9735 --bitcoin-rpcconnect=bitcoind --bitcoin-rpcport=18443 --bitcoin-rpcuser=lnbits --bitcoin-rpcpassword=lnbits'"
+    expose:
+      - 9735:9735
+  electrs:
+    hostname: electrs
+    image: getumbrel/electrs:latest
+    environment:
+      ELECTRS_ELECTRUM_RPC_ADDR: "electrs:50001"
+      ELECTRS_DAEMON_RPC_ADDR: "bitcoind:18443"
+      ELECTRS_DAEMON_P2P_ADDR: "bitcoind:18444"
+    entrypoint: "sh -c 'sleep 15 && electrs'"
+    ports:
+      - 50001:50001
+    volumes:
+      - ./data/electrs/:/data/.electrs/
+  mempool-web:
+    restart: on-failure
+    environment:
+      FRONTEND_HTTP_PORT: "8080"
+      BACKEND_MAINNET_HTTP_HOST: "mempool-api"
+    image: mempool/frontend:latest
+    ports:
+      - 8080:8080
+  mempool-api:
+    environment:
+      MEMPOOL_BACKEND: "electrum"
+      ELECTRUM_HOST: electrs
+      ELECTRUM_PORT: "50001"
+      ELECTRUM_TLS_ENABLED: "false"
+      CORE_RPC_HOST: bitcoind
+      CORE_RPC_PORT: "18443"
+      CORE_RPC_USERNAME: "lnbits"
+      CORE_RPC_PASSWORD: "lnbits"
+      DATABASE_ENABLED: "true"
+      DATABASE_HOST: "mempool-db"
+      DATABASE_DATABASE: "mempool"
+      DATABASE_USERNAME: "mempool"
+      DATABASE_PASSWORD: "mempool"
+      STATISTICS_ENABLED: "true"
+    image: mempool/backend:latest
+    restart: on-failure
+  mempool-db:
+    environment:
+      MYSQL_DATABASE: "mempool"
+      MYSQL_USER: "mempool"
+      MYSQL_PASSWORD: "mempool"
+      MYSQL_ROOT_PASSWORD: "admin"
+    image: mariadb:10.5.8
+  lnd:
+    hostname: lnd
+    image: boltz/lnd:0.14.2-beta
+    restart: on-failure
+    entrypoint: "sh -c 'sleep 20; lnd --listen=0.0.0.0:9735 --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080 --bitcoin.active --bitcoin.regtest --bitcoin.node=bitcoind --bitcoind.rpchost=bitcoind --bitcoind.zmqpubrawtx=bitcoind:29000 --bitcoind.zmqpubrawblock=bitcoind:29001 --bitcoind.rpcuser=lnbits --bitcoind.rpcpass=lnbits --noseedbackup --protocol.wumbo-channels'"
+    expose:
+      - 9735:9735
+      - 10009:10009
+    volumes:
+      - lnd-data:/root/.lnd/
+  boltz:
+    hostname: boltz
+    image: boltz/backend
+    entrypoint: "sh -c 'sleep 30; /boltz-backend/bin/boltzd'"
+    expose:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - lnd-data:/data/lnd/
+      - ./data/boltz/:/root/.boltz/
+volumes:
+  lnd-data:
