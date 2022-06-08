@@ -1,23 +1,23 @@
 version: "3.7"
-volumes:
-  lnbits-data:
-  # lnd-data:
 services:
   lnbits:
     hostname: lnbits
     image: lnbitsdocker/lnbits-legend
     restart: on-failure
-    user: "1000:1000"
+    user: 1000:1000
     environment:
+      HOST: lnbits
       LNBITS_BACKEND_WALLET_CLASS: "LndRestWallet"
       LNBITS_DATA_FOLDER: "./data"
-      LND_REST_ENDPOINT: "http://lnd:8081/"
+      LND_REST_ENDPOINT: "https://lnd:8081/"
       LND_REST_CERT: "./lnd/tls.cert"
       LND_REST_MACAROON: "./lnd/data/chain/bitcoin/regtest/admin.macaroon"
+      # LNBITS_BACKEND_WALLET_CLASS: "LndRestWallet"
     ports:
       - 5000:5000
     volumes:
-      - lnbits-data:/app/data/
+      # - ../lnbits:/app/lnbits/
+      - ./data/lnbits:/app/data/
       - ./data/lnd:/app/lnd/
   bitcoind:
     hostname: bitcoind
@@ -34,6 +34,8 @@ services:
     entrypoint: "sh -c 'sleep 15 && lightningd --network regtest --bind-addr=0.0.0.0:9735 --bitcoin-rpcconnect=bitcoind --bitcoin-rpcport=18443 --bitcoin-rpcuser=lnbits --bitcoin-rpcpassword=lnbits'"
     expose:
       - 9735
+    volumes:
+      - ./data/clightning:/root/.lightning/
   electrs:
     hostname: electrs
     image: getumbrel/electrs:latest
@@ -83,14 +85,16 @@ services:
     hostname: lnd
     image: boltz/lnd:0.14.2-beta
     restart: on-failure
-    entrypoint: "sh -c 'sleep 20; lnd --listen=0.0.0.0:9735 --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080 --bitcoin.active --bitcoin.regtest --bitcoin.node=bitcoind --bitcoind.rpchost=bitcoind --bitcoind.zmqpubrawtx=bitcoind:29000 --bitcoind.zmqpubrawblock=bitcoind:29001 --bitcoind.rpcuser=lnbits --bitcoind.rpcpass=lnbits --noseedbackup --protocol.wumbo-channels'"
-    ports:
-      - 8081:8080
+    user: 1000:1000
+    environment:
+      HOME: /data
+    entrypoint: "sh -c 'sleep 20; lnd --listen=lnd:9735 --rpclisten=lnd:10009 --restlisten=lnd:8081 --bitcoin.active --bitcoin.regtest --bitcoin.node=bitcoind --bitcoind.rpchost=bitcoind --bitcoind.zmqpubrawtx=bitcoind:29000 --bitcoind.zmqpubrawblock=bitcoind:29001 --bitcoind.rpcuser=lnbits --bitcoind.rpcpass=lnbits --noseedbackup --protocol.wumbo-channels'"
     expose:
+      - 8081
       - 9735
       - 10009
     volumes:
-      - ./data/lnd/:/root/.lnd/
+      - ./data/lnd/:/data/.lnd/
   boltz:
     hostname: boltz
     image: boltz/backend

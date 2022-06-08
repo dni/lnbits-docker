@@ -48,7 +48,6 @@ lnbits-regtest-start-log(){
 }
 lnbits-regtest-stop(){
   docker compose down --volumes
-  rm -rf ./data/lnd
 }
 lnbits-regtest-restart(){
   lnbits-regtest-stop
@@ -87,6 +86,5 @@ lnbits-regtest-init(){
   lncli-sim 1 openchannel $(lncli-sim 1 listpeers | jq -r '.peers[0].pub_key') $channel_size 8000000
 
   bitcoin-cli-sim -generate 1
-
 }
 
