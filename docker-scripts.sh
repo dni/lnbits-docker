@@ -48,6 +48,9 @@ lnbits-regtest-start-log(){
 }
 lnbits-regtest-stop(){
   docker compose down --volumes
+  sudo rm -rf ./data/lnd ./data/boltz/boltz.db
+  mkdir ./data/lnd
+
 }
 lnbits-regtest-restart(){
   lnbits-regtest-stop
