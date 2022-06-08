@@ -1,10 +1,12 @@
 version: "3.7"
+volumes:
+  lnbits-data:
 services:
   lnbits:
     hostname: lnbits
     image: lnbitsdocker/lnbits-legend
     restart: on-failure
-    user: 1000:1000
+    user: "0:0"
     environment:
       HOST: lnbits
       LNBITS_BACKEND_WALLET_CLASS: "LndRestWallet"
@@ -17,8 +19,8 @@ services:
       - 5000:5000
     volumes:
       # - ../lnbits:/app/lnbits/
-      - ./data/lnbits:/app/data/
-      - ./data/lnd:/app/lnd/
+      - lnbits-data:/app/data
+      - ./data/lnd:/app/lnd:uid=1000,gid=1000
   bitcoind:
     hostname: bitcoind
     image: boltz/bitcoin-core:22.0
@@ -37,6 +39,8 @@ services:
     volumes:
       - ./data/clightning:/root/.lightning/
   electrs:
+    depends_on:
+      - bitcoind
     hostname: electrs
     image: getumbrel/electrs:latest
     environment:
@@ -57,6 +61,8 @@ services:
     ports:
       - 8080:8080
   mempool-api:
+    depends_on:
+      - electrs
     environment:
       MEMPOOL_BACKEND: "electrum"
       ELECTRUM_HOST: electrs
@@ -83,25 +89,25 @@ services:
     image: mariadb:10.5.8
   lnd:
     hostname: lnd
+    depends_on:
+      - bitcoind
     image: boltz/lnd:0.14.2-beta
     restart: on-failure
-    user: 1000:1000
-    environment:
-      HOME: /data
+    # user: 1000:1000
     entrypoint: "sh -c 'sleep 20; lnd --listen=lnd:9735 --rpclisten=lnd:10009 --restlisten=lnd:8081 --bitcoin.active --bitcoin.regtest --bitcoin.node=bitcoind --bitcoind.rpchost=bitcoind --bitcoind.zmqpubrawtx=bitcoind:29000 --bitcoind.zmqpubrawblock=bitcoind:29001 --bitcoind.rpcuser=lnbits --bitcoind.rpcpass=lnbits --noseedbackup --protocol.wumbo-channels'"
     expose:
       - 8081
       - 9735
       - 10009
     volumes:
-      - ./data/lnd/:/data/.lnd/
+      - ./data/lnd:/root/.lnd/
   boltz:
     hostname: boltz
     image: boltz/backend
-    entrypoint: "sh -c 'sleep 30; /boltz-backend/bin/boltzd --loglevel debug'"
+    entrypoint: "sh -c 'sleep 40; /boltz-backend/bin/boltzd'"
     ports:
       - 9000:9000
       - 9001:9001
     volumes:
-      - ./data/lnd/:/data/lnd/
+      - ./data/lnd:/data/lnd/
       - ./data/boltz/:/root/.boltz/
