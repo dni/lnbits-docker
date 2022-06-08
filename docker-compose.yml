@@ -1,24 +1,24 @@
 version: "3.7"
 volumes:
-  lnd-data:
-  # lnbits-data:
+  lnbits-data:
+  # lnd-data:
 services:
-  # lnbits:
-  #   hostname: lnbits
-  #   image: lnbitsdocker/lnbits-legend
-  #   restart: on-failure
-  #   # user: "0:0"
-  #   environment:
-  #     LNBITS_BACKEND_WALLET_CLASS: "LndRestWallet"
-  #     LNBITS_DATA_FOLDER: "./data"
-  #     LND_REST_ENDPOINT: "http://lnd:8080/"
-  #     LND_REST_CERT: "./lnd/tls.cert"
-  #     LND_REST_MACAROON: "./lnd/data/chain/bitcoin/regtest/admin.macaroon"
-  #   ports:
-  #     - 5000:5000
-  #   volumes:
-  #     - lnbits-data:/app/data/
-  #     - lnd-data:/app/lnd/
+  lnbits:
+    hostname: lnbits
+    image: lnbitsdocker/lnbits-legend
+    restart: on-failure
+    user: "1000:1000"
+    environment:
+      LNBITS_BACKEND_WALLET_CLASS: "LndRestWallet"
+      LNBITS_DATA_FOLDER: "./data"
+      LND_REST_ENDPOINT: "http://lnd:8081/"
+      LND_REST_CERT: "./lnd/tls.cert"
+      LND_REST_MACAROON: "./lnd/data/chain/bitcoin/regtest/admin.macaroon"
+    ports:
+      - 5000:5000
+    volumes:
+      - lnbits-data:/app/data/
+      - ./data/lnd:/app/lnd/
   bitcoind:
     hostname: bitcoind
     image: boltz/bitcoin-core:22.0
@@ -84,19 +84,20 @@ services:
     image: boltz/lnd:0.14.2-beta
     restart: on-failure
     entrypoint: "sh -c 'sleep 20; lnd --listen=0.0.0.0:9735 --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080 --bitcoin.active --bitcoin.regtest --bitcoin.node=bitcoind --bitcoind.rpchost=bitcoind --bitcoind.zmqpubrawtx=bitcoind:29000 --bitcoind.zmqpubrawblock=bitcoind:29001 --bitcoind.rpcuser=lnbits --bitcoind.rpcpass=lnbits --noseedbackup --protocol.wumbo-channels'"
+    ports:
+      - 8081:8080
     expose:
-      - 8080
       - 9735
       - 10009
     volumes:
-      - lnd-data:/root/.lnd/
+      - ./data/lnd/:/root/.lnd/
   boltz:
     hostname: boltz
     image: boltz/backend
-    entrypoint: "sh -c 'sleep 30; /boltz-backend/bin/boltzd'"
-    expose:
-      - 9000
-      - 9001
+    entrypoint: "sh -c 'sleep 30; /boltz-backend/bin/boltzd --loglevel debug'"
+    ports:
+      - 9000:9000
+      - 9001:9001
     volumes:
-      - lnd-data:/data/lnd/
+      - ./data/lnd/:/data/lnd/
       - ./data/boltz/:/root/.boltz/

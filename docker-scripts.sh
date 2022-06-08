@@ -40,14 +40,15 @@ connect_clightning_node() {
 
 lnbits-regtest-start(){
   lnbits-regtest-stop
-  docker-compose up --scale clightning=3 -d
+  docker compose up --scale clightning=3 -d
 }
 lnbits-regtest-start-log(){
   lnbits-regtest-stop
-  docker-compose up --scale clightning=3
+  docker compose up --scale clightning=3
 }
 lnbits-regtest-stop(){
-  docker-compose down --volumes
+  docker compose down --volumes
+  rm -rf ./data/lnd
 }
 lnbits-regtest-restart(){
   lnbits-regtest-stop
