@@ -14,7 +14,6 @@ services:
       LND_REST_ENDPOINT: "https://lnd:8081/"
       LND_REST_CERT: "./lnd/tls.cert"
       LND_REST_MACAROON: "./lnd/data/chain/bitcoin/regtest/admin.macaroon"
-      # LNBITS_BACKEND_WALLET_CLASS: "LndRestWallet"
     ports:
       - 5000:5000
     volumes:
@@ -36,8 +35,6 @@ services:
     entrypoint: "sh -c 'sleep 15 && lightningd --network regtest --bind-addr=0.0.0.0:9735 --bitcoin-rpcconnect=bitcoind --bitcoin-rpcport=18443 --bitcoin-rpcuser=lnbits --bitcoin-rpcpassword=lnbits'"
     expose:
       - 9735
-    volumes:
-      - ./data/clightning:/root/.lightning/
   electrs:
     depends_on:
       - bitcoind
