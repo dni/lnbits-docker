@@ -1,39 +1,39 @@
 version: "3.7"
 volumes:
   lnd-data:
-  lnbits-data:
+  # lnbits-data:
 services:
-  lnbits:
-    hostname: lnbits
-    image: lnbitsdocker/lnbits-legend
-    restart: on-failure
-    # user: "0:0"
-    environment:
-      LNBITS_BACKEND_WALLET_CLASS: "LndRestWallet"
-      LNBITS_DATA_FOLDER: "./data"
-      LND_REST_ENDPOINT: "http://lnd:8080/"
-      LND_REST_CERT: "./lnd/tls.cert"
-      LND_REST_MACAROON: "./lnd/data/chain/bitcoin/regtest/admin.macaroon"
-    ports:
-      - 5000:5000
-    volumes:
-      - lnbits-data:/app/data/
-      - lnd-data:/app/lnd/
+  # lnbits:
+  #   hostname: lnbits
+  #   image: lnbitsdocker/lnbits-legend
+  #   restart: on-failure
+  #   # user: "0:0"
+  #   environment:
+  #     LNBITS_BACKEND_WALLET_CLASS: "LndRestWallet"
+  #     LNBITS_DATA_FOLDER: "./data"
+  #     LND_REST_ENDPOINT: "http://lnd:8080/"
+  #     LND_REST_CERT: "./lnd/tls.cert"
+  #     LND_REST_MACAROON: "./lnd/data/chain/bitcoin/regtest/admin.macaroon"
+  #   ports:
+  #     - 5000:5000
+  #   volumes:
+  #     - lnbits-data:/app/data/
+  #     - lnd-data:/app/lnd/
   bitcoind:
     hostname: bitcoind
     image: boltz/bitcoin-core:22.0
     command: "-regtest -zmqpubrawtx=tcp://0.0.0.0:29000 -zmqpubrawblock=tcp://0.0.0.0:29001 -txindex -rpcallowip=0.0.0.0/0 -rpcbind=0.0.0.0 -rpcuser=lnbits -rpcpassword=lnbits"
     expose:
-      - 29000:29000
-      - 29001:29001
-      - 18443:18443
-      - 18444:18444
+      - 29000
+      - 29001
+      - 18443
+      - 18444
   clightning:
     hostname: clightning
     image: michael1011/cln:latest
     entrypoint: "sh -c 'sleep 15 && lightningd --network regtest --bind-addr=0.0.0.0:9735 --bitcoin-rpcconnect=bitcoind --bitcoin-rpcport=18443 --bitcoin-rpcuser=lnbits --bitcoin-rpcpassword=lnbits'"
     expose:
-      - 9735:9735
+      - 9735
   electrs:
     hostname: electrs
     image: getumbrel/electrs:latest
@@ -85,9 +85,9 @@ services:
     restart: on-failure
     entrypoint: "sh -c 'sleep 20; lnd --listen=0.0.0.0:9735 --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080 --bitcoin.active --bitcoin.regtest --bitcoin.node=bitcoind --bitcoind.rpchost=bitcoind --bitcoind.zmqpubrawtx=bitcoind:29000 --bitcoind.zmqpubrawblock=bitcoind:29001 --bitcoind.rpcuser=lnbits --bitcoind.rpcpass=lnbits --noseedbackup --protocol.wumbo-channels'"
     expose:
-      - 8080:8080
-      - 9735:9735
-      - 10009:10009
+      - 8080
+      - 9735
+      - 10009
     volumes:
       - lnd-data:/root/.lnd/
   boltz:
@@ -95,8 +95,8 @@ services:
     image: boltz/backend
     entrypoint: "sh -c 'sleep 30; /boltz-backend/bin/boltzd'"
     expose:
-      - 9000:9000
-      - 9001:9001
+      - 9000
+      - 9001
     volumes:
       - lnd-data:/data/lnd/
       - ./data/boltz/:/root/.boltz/
