@@ -1,3 +1,5 @@
+# WARNING: old repository, moved to -> https://github.com/lnbits/legend-regtest-enviroment
+
 # temporary warning
 boltz/backend is not in docker hub yet clone and build the image yourself
 ```console
